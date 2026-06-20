@@ -131,6 +131,35 @@ router.post("/logout", requireAdmin, (req, res) => {
 });
 
 /* ------------------------------------------------------------------ *
+ * Change the signed-in admin's own password
+ * ------------------------------------------------------------------ */
+router.post("/password", requireAdmin, async (req, res) => {
+  const current = String(req.body.current_password || "");
+  const next = String(req.body.new_password || "");
+  const confirm = String(req.body.confirm_password || "");
+
+  const admin = db.getAdmin(req.session.adminId);
+  if (!admin) {
+    return renderDashboard(req, res, { error: "Account not found — please log in again." });
+  }
+  if (!(await bcrypt.compare(current, admin.password_hash))) {
+    return renderDashboard(req, res, { error: "Current password is incorrect." });
+  }
+  if (next.length < 6) {
+    return renderDashboard(req, res, {
+      error: "New password must be at least 6 characters.",
+    });
+  }
+  if (next !== confirm) {
+    return renderDashboard(req, res, { error: "New passwords do not match." });
+  }
+
+  const hash = await bcrypt.hash(next, 12);
+  db.updateAdminPassword(admin.id, hash);
+  renderDashboard(req, res, { notice: "Password updated." });
+});
+
+/* ------------------------------------------------------------------ *
  * Library management (all require an authenticated admin)
  * ------------------------------------------------------------------ */
 router.post("/libraries", requireAdmin, async (req, res) => {

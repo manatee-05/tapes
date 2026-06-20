@@ -1,4 +1,4 @@
-<%- include('../partials/head', { pageTitle: 'RetroTape — Admin Dashboard' }) %>
+<%- include('../partials/head', { pageTitle: 'Admin Dashboard' }) %>
 
 <main class="max-w-5xl mx-auto p-4 sm:p-8">
 
@@ -6,7 +6,7 @@
   <header class="vcr-panel flex flex-wrap items-center justify-between gap-3 mb-8">
     <div class="flex items-center gap-3">
       <span class="led on"></span>
-      <h1 class="retro-title text-base sm:text-lg text-amber-glow">RETROTAPE ADMIN</h1>
+      <h1 class="retro-title text-base sm:text-lg text-amber-glow">ADMIN CONSOLE</h1>
     </div>
     <div class="flex items-center gap-3 font-mono text-sm">
       <span class="opacity-70">operator: <span class="text-phosphor-glow"><%= username %></span></span>
@@ -74,6 +74,34 @@
       <% } %>
     </section>
   </div>
+
+  <!-- ============ Account / change password ============ -->
+  <section class="terminal p-6 mt-8">
+    <h2 class="retro-title text-sm mb-4 text-phosphor-glow">// ACCOUNT</h2>
+    <p class="font-mono text-xs opacity-70 mb-4">
+      Signed in as <span class="text-amber-glow"><%= username %></span>. Update the master password below.
+    </p>
+    <form method="POST" action="/admin/password" class="space-y-4">
+      <div class="grid sm:grid-cols-3 gap-4">
+        <label class="block">
+          <span class="font-mono text-sm">CURRENT PASSWORD</span>
+          <input class="mt-1" type="password" name="current_password"
+                 autocomplete="current-password" required />
+        </label>
+        <label class="block">
+          <span class="font-mono text-sm">NEW PASSWORD</span>
+          <input class="mt-1" type="password" name="new_password"
+                 autocomplete="new-password" minlength="6" required />
+        </label>
+        <label class="block">
+          <span class="font-mono text-sm">CONFIRM NEW</span>
+          <input class="mt-1" type="password" name="confirm_password"
+                 autocomplete="new-password" minlength="6" required />
+        </label>
+      </div>
+      <button type="submit" class="vcr-btn">🔑 CHANGE PASSWORD</button>
+    </form>
+  </section>
 
   <!-- ============ Manage selected library ============ -->
   <% if (selected) { %>
@@ -162,10 +190,13 @@
       <% } else { %>
         <ul class="space-y-2">
           <% videos.forEach(function(v){ %>
-            <li class="flex items-center justify-between border border-gray-800 rounded p-3 gap-3">
+            <li class="flex items-start justify-between border border-gray-800 rounded p-3 gap-3">
               <div class="min-w-0">
                 <div class="font-mono text-amber-glow truncate"><%= v.title %></div>
                 <div class="text-xs opacity-60 truncate"><%= v.original_name %> · <%= (v.size_bytes/1048576).toFixed(1) %> MB</div>
+                <% if (v.description) { %>
+                  <div class="text-xs opacity-75 mt-1 whitespace-pre-wrap break-words"><%= v.description %></div>
+                <% } %>
               </div>
               <div class="flex items-center gap-2 shrink-0">
                 <a class="vcr-btn text-xs" href="/<%= selected.slug %>/watch/<%= v.id %>" target="_blank">▶ PREVIEW</a>
