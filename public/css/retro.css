@@ -32,38 +32,53 @@
 
 :root {
   --amber-glow: #ffb000;
+  --amber-soft: #ffd596; /* gentler amber for comfortable reading */
   --phosphor-glow: #33ff66;
-  --bluescreen: #0000aa;
-  --chassis-900: #0a0a0a;
-  --chassis-700: #1b1b1b;
+  --phosphor-soft: #9bf0b4; /* gentler green for labels / body accents */
+  --bluescreen: #142a7a;
+  --chassis-900: #14100c;
+  --chassis-700: #241c14;
+  --cream: #efe6d2; /* warm "paper" text, the cozy reading colour */
+  --room-bg: #1a1410; /* warm, dim living-room brown */
 }
 
 html,
 body {
-  background-color: #050505;
-  color: #d8d8d8;
+  background-color: var(--room-bg);
+  color: var(--cream);
   font-family: "Share Tech Mono", monospace;
+  font-size: 16px;
+  line-height: 1.55;
   margin: 0;
   min-height: 100%;
 }
 
-/* Subtle dark vignette behind everything, like a dim living room. */
+/* A warm, dim living-room glow: a soft pool of lamplight up top fading into a
+   cozy brown vignette, instead of a cold black void. */
 body {
   background-image: radial-gradient(
-    ellipse at center,
-    #141414 0%,
-    #050505 70%,
-    #000 100%
-  );
+      ellipse at 50% -10%,
+      rgba(255, 176, 0, 0.07) 0%,
+      rgba(0, 0, 0, 0) 45%
+    ),
+    radial-gradient(
+      ellipse at center,
+      #241a12 0%,
+      #150f0b 65%,
+      #0c0907 100%
+    );
 }
 
-/* ---- Headings use the blocky arcade font ------------------------------- */
+/* ---- Headings ----------------------------------------------------------
+   The chunky arcade font (Press Start 2P) reads as "retro computer" and is
+   hard on the eyes in running text, so headings lead with VT323 — a softer,
+   rounder CRT face that keeps the nostalgia while staying legible. */
 .font-display,
 h1.retro-title,
 .retro-title {
-  font-family: "Press Start 2P", "VT323", monospace;
-  letter-spacing: 1px;
-  line-height: 1.4;
+  font-family: "VT323", "Press Start 2P", monospace;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
 }
 
 /* ---- Digital display (clock / timer / keypad readout) ------------------ */
@@ -413,8 +428,15 @@ h1.retro-title,
   margin-bottom: 4px;
 }
 .cassette-label .label-meta {
-  font-size: 0.78rem;
-  opacity: 0.75;
+  font-size: 0.8rem;
+  opacity: 0.8;
+  /* Clean multi-line truncation so longer notes taper off gracefully on the
+     spine instead of being hard-clipped mid-word (full notes live in the
+     player's sleeve). */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* The two reel windows at the bottom of the cassette. */
@@ -526,20 +548,23 @@ h1.retro-title,
    FORMS / TERMINAL LOOK (admin + setup)
    ========================================================================= */
 .terminal {
-  background: #000;
-  border: 1px solid #1d1d1d;
+  background: #1c1610;
+  border: 1px solid #3a2f22;
   border-radius: 10px;
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 0, 0, 0.9);
-  color: var(--phosphor-glow);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.55), inset 0 0 24px rgba(0, 0, 0, 0.45);
+  color: var(--cream);
   font-family: "Share Tech Mono", monospace;
 }
-.terminal input,
+/* Text-entry fields fill their row. Radios/checkboxes are deliberately
+   excluded here — a blanket width:100% was stretching them and throwing the
+   passcode radio group out of alignment. */
+.terminal input:not([type="radio"]):not([type="checkbox"]),
 .terminal textarea,
 .terminal select,
 .retro-input {
-  background: #0a0a0a;
-  border: 1px solid #2a2a2a;
-  color: var(--phosphor-glow);
+  background: #0f0c08;
+  border: 1px solid #4a3c2c;
+  color: var(--cream);
   font-family: "Share Tech Mono", monospace;
   padding: 10px 12px;
   border-radius: 6px;
@@ -549,8 +574,17 @@ h1.retro-title,
 .terminal input:focus,
 .terminal textarea:focus,
 .retro-input:focus {
-  border-color: var(--phosphor-glow);
-  box-shadow: 0 0 8px rgba(51, 255, 102, 0.4);
+  border-color: var(--amber-glow);
+  box-shadow: 0 0 8px rgba(255, 176, 0, 0.35);
+}
+
+/* Tactile, properly-sized toggles that align with their labels. */
+.terminal input[type="radio"],
+.terminal input[type="checkbox"] {
+  width: auto;
+  flex: none;
+  accent-color: var(--amber-glow);
+  transform: translateY(1px);
 }
 
 /* The paper "tape sleeve" insert preview in the admin upload form. */
@@ -558,10 +592,17 @@ h1.retro-title,
   background: #f6f1de;
   color: #1a1a1a;
   font-family: "Courier New", monospace;
+  line-height: 1.55;
   border-radius: 4px;
   padding: 14px;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+  /* Long sleeve notes wrap and, past a point, scroll within the paper rather
+     than being clipped or shoving the layout around. */
   white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-height: 18rem;
+  overflow-y: auto;
 }
 
 /* A flash/notice banner. */

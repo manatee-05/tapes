@@ -72,8 +72,12 @@ const queries = {
   // --- Admins ---
   countAdmins: db.prepare("SELECT COUNT(*) AS n FROM admins"),
   getAdminByUsername: db.prepare("SELECT * FROM admins WHERE username = ?"),
+  getAdminById: db.prepare("SELECT * FROM admins WHERE id = ?"),
   insertAdmin: db.prepare(
     "INSERT INTO admins (username, password_hash) VALUES (?, ?)"
+  ),
+  updateAdminPassword: db.prepare(
+    "UPDATE admins SET password_hash = ? WHERE id = ?"
   ),
 
   // --- Libraries ---
@@ -113,8 +117,11 @@ const model = {
   // Admins
   adminCount: () => queries.countAdmins.get().n,
   findAdmin: (username) => queries.getAdminByUsername.get(username),
+  getAdmin: (id) => queries.getAdminById.get(id),
   createAdmin: (username, passwordHash) =>
     queries.insertAdmin.run(username, passwordHash),
+  updateAdminPassword: (id, passwordHash) =>
+    queries.updateAdminPassword.run(passwordHash, id),
 
   // Libraries
   createLibrary: (title, slug, passcodeHash) =>

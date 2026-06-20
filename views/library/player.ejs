@@ -89,9 +89,11 @@
       </div>
 
       <% if (video.description) { %>
-        <!-- The paper sleeve insert that shipped with this tape -->
-        <details class="mt-4">
-          <summary class="font-mono text-xs cursor-pointer opacity-70">📄 SLEEVE NOTES</summary>
+        <!-- The paper sleeve insert that shipped with this tape. Open by
+             default so the notes are right there to read; long notes wrap and
+             scroll inside the paper (see .sleeve in retro.css). -->
+        <details class="mt-4" open>
+          <summary class="font-mono text-sm cursor-pointer text-amber-soft">📄 SLEEVE NOTES</summary>
           <div class="sleeve mt-2 text-sm"><%= video.description %></div>
         </details>
       <% } %>

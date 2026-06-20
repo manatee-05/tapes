@@ -1,4 +1,4 @@
-<%- include('partials/head', { pageTitle: 'RetroTape — No Signal' }) %>
+<%- include('partials/head', { pageTitle: 'No Signal' }) %>
 
 <!--
   Root / fallback screen. Mimics an old television set receiving no input:
@@ -23,7 +23,7 @@
             <p class="font-mono text-sm sm:text-base text-gray-200 max-w-md">
               <%= typeof message !== 'undefined'
                     ? message
-                    : 'There is no channel here. RetroTape can only be viewed through a direct library link — ask whoever shared the collection for your personal address, e.g. ' + BASE_URL + '/their-library.' %>
+                    : 'There is no channel here. A collection can only be viewed through a direct library link — ask whoever shared it for your personal address, e.g. ' + BASE_URL + '/their-library.' %>
             </p>
           </div>
         </div>
@@ -35,7 +35,7 @@
           <span class="led on"></span>
           <span class="digital green text-xl">--:--:--</span>
         </div>
-        <div class="text-gray-500 font-mono text-sm tracking-widest">R E T R O T A P E</div>
+        <div class="text-gray-500 font-mono text-sm tracking-widest">V C R</div>
         <a href="/admin" class="vcr-btn text-xs" title="Administration">⚙ ADMIN</a>
       </div>
     </div>

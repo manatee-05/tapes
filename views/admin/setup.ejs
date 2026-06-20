@@ -1,17 +1,17 @@
-<%- include('../partials/head', { pageTitle: 'RetroTape — First-Time Setup' }) %>
+<%- include('../partials/head', { pageTitle: 'First-Time Setup' }) %>
 
 <!-- Retro "boot sequence" setup wizard shown only when no admin exists yet. -->
 <main class="min-h-screen flex items-center justify-center p-4">
   <div class="terminal w-full max-w-lg p-8">
     <pre class="text-xs leading-tight mb-4 opacity-80">
-RETROTAPE BIOS v1.0
+SYSTEM BIOS v1.0
 SYSTEM CHECK ........ OK
 DATABASE ............ EMPTY
 ADMIN ACCOUNT ....... <span class="text-amber-glow">NOT FOUND</span></pre>
 
     <h1 class="retro-title text-lg mb-6 text-phosphor-glow">// FIRST-TIME SETUP</h1>
     <p class="font-mono text-sm mb-6 opacity-80">
-      No administrator exists. Create the master account to power on RetroTape.
+      No administrator exists. Create the master account to power on the system.
     </p>
 
     <% if (error) { %>

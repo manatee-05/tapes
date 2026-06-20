@@ -26,21 +26,25 @@ module.exports = {
         // Glowing amber digital display.
         amber: {
           glow: "#ffb000",
+          soft: "#ffd596", // gentler amber for comfortable reading
           dim: "#7a5400",
         },
         // Neon/phosphor green digital display.
         phosphor: {
           glow: "#33ff66",
+          soft: "#9bf0b4", // gentler green for labels / body accents
           dim: "#0c5c24",
         },
+        // Warm "paper" cream — the cozy reading colour.
+        cream: "#efe6d2",
         // The classic "blue screen" of an idle TV / system state.
         bluescreen: "#0000aa",
       },
       fontFamily: {
         // Digital clock style monospaced font for timers/displays.
         digital: ['"VT323"', '"Share Tech Mono"', "monospace"],
-        // Retro blocky font for headings.
-        display: ['"Press Start 2P"', '"VT323"', "monospace"],
+        // Heading font: VT323 first (legible, cozy CRT), arcade font as accent.
+        display: ['"VT323"', '"Press Start 2P"', "monospace"],
         mono: ['"Share Tech Mono"', "monospace"],
       },
       boxShadow: {
