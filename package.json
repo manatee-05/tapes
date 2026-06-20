@@ -1,0 +1,29 @@
+{
+  "name": "retrotape",
+  "version": "1.0.0",
+  "description": "RetroTape — host and play digitized video tapes with a nostalgic late-1900s VHS/CRT theme.",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js",
+    "build:css": "tailwindcss -i ./src/styles/input.css -o ./public/css/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./src/styles/input.css -o ./public/css/tailwind.css --watch"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^12.2.0",
+    "better-sqlite3-session-store": "^0.1.0",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "multer": "^2.0.1"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.13"
+  },
+  "license": "MIT"
+}

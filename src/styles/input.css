@@ -1,0 +1,9 @@
+/*
+ * Tailwind entry point for RetroTape.
+ * Compiled by the Tailwind CLI into /public/css/tailwind.css.
+ * Pure-retro effects (scanlines, static, curvature, buttons) live in
+ * /public/css/retro.css so they survive regardless of Tailwind purging.
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

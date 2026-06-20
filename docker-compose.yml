@@ -1,0 +1,69 @@
+# =============================================================================
+# RetroTape — Portainer-friendly single-stack deployment.
+#
+# Paste this straight into the Portainer "Web editor" (or deploy it from a Git
+# repository). The three environment variables below are declared with sensible
+# defaults so Portainer auto-detects them and shows editable fields in its UI.
+#
+#   PORT      internal + published port (default 3000)
+#   BASE_URL  public domain/IP of this deployment (e.g. https://tapes.com)
+#   DATA_DIR  in-container path for the SQLite DB + uploaded tapes (persisted)
+#
+# Persistence uses two managed (named) Docker volumes — no host bind mounts:
+#   retrotape_data  -> DATA_DIR (/data)        : SQLite database + sessions
+#   retrotape_media -> UPLOADS_DIR (/app/uploads): uploaded video media
+# so the database AND the tapes survive stack updates/redeploys without
+# cluttering the host filesystem.
+# =============================================================================
+
+services:
+  retrotape:
+    # Build the image from this repository's Dockerfile. When deploying via
+    # Portainer's "Repository" method this works as-is. If you instead push a
+    # prebuilt image to a registry, comment out `build:` and set `image:`.
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: retrotape:latest
+    container_name: retrotape
+    restart: unless-stopped
+
+    # Map the host port to the container port, both driven by ${PORT}.
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+
+    # Surface the configuration to Portainer with defaults.
+    environment:
+      PORT: ${PORT:-3000}
+      BASE_URL: ${BASE_URL:-http://localhost:3000}
+      DATA_DIR: ${DATA_DIR:-/data}
+      # Video media is stored inside the container at this path (named volume).
+      UPLOADS_DIR: ${UPLOADS_DIR:-/app/uploads}
+      # Strongly recommended in production: set a long random secret.
+      SESSION_SECRET: ${SESSION_SECRET:-change-me-to-a-long-random-string}
+
+    # Two managed volumes: the SQLite database and the uploaded video media.
+    volumes:
+      - retrotape_data:${DATA_DIR:-/data}
+      - retrotape_media:${UPLOADS_DIR:-/app/uploads}
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://127.0.0.1:'+(process.env.PORT||3000)+'/',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  # Database + configuration + sessions.
+  retrotape_data:
+    name: retrotape_data
+  # Uploaded video media (mapped to /app/uploads inside the container).
+  retrotape_media:
+    name: retrotape_media

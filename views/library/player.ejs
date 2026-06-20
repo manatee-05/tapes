@@ -1,0 +1,103 @@
+<%- include('../partials/head', { pageTitle: video.title + ' — Now Playing' }) %>
+
+<!--
+  The virtual VCR + CRT player.
+
+  The <video> element streams the ORIGINAL source from /media/:id with no
+  filters applied. Every retro effect (scanlines, static, curvature, tracking)
+  is confined to the bezel/chassis/controls and the EMPTY player state. As soon
+  as playback begins we add `.playing` to the screen which removes all overlays.
+-->
+<main class="max-w-4xl mx-auto p-4 sm:p-8">
+
+  <div class="mb-4 flex items-center justify-between font-mono text-sm">
+    <a href="/<%= library.slug %>" class="vcr-btn text-xs">⏏ EJECT TO SHELF</a>
+    <span class="opacity-70"><%= library.title %></span>
+  </div>
+
+  <div class="tv-cabinet">
+    <!-- CRT television -->
+    <div class="crt-bezel" id="bezel">
+      <div class="crt-screen" id="screen">
+        <!-- The pristine source video (no CSS filters, ever) -->
+        <video id="tape" class="tape-video" preload="metadata" playsinline
+               poster="" crossorigin="anonymous">
+          <source src="/media/<%= video.id %>" type="<%= video.mime_type || 'video/mp4' %>" />
+          Your browser cannot play this tape format.
+        </video>
+
+        <!-- Empty-state effects, shown until PLAY is pressed -->
+        <div class="screen-effects"></div>
+        <div class="screen-message" id="standby">
+          <p class="digital text-4xl mb-2">■ STANDBY ■</p>
+          <p class="font-mono text-sm">Press ► PLAY to begin the tape</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ VCR control panel ============ -->
+    <div class="vcr-panel mt-5">
+      <!-- Display row: timer + status -->
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <div class="flex items-center gap-3">
+          <span class="led on" id="powerLed"></span>
+          <span class="digital text-2xl" id="timer">00:00:00</span>
+          <span class="digital text-sm opacity-60" id="status">STOPPED</span>
+        </div>
+        <div class="retro-title text-xs text-amber-glow truncate max-w-[50%]"><%= video.title %></div>
+      </div>
+
+      <!-- Transport buttons -->
+      <div class="flex flex-wrap items-center gap-2">
+        <button class="vcr-btn" id="btnRew"   title="Rewind"><span class="glyph">⏪</span>REW</button>
+        <button class="vcr-btn" id="btnPlay"  title="Play"><span class="glyph">►</span>PLAY</button>
+        <button class="vcr-btn" id="btnPause" title="Pause"><span class="glyph">❚❚</span>PAUSE</button>
+        <button class="vcr-btn" id="btnStop"  title="Stop"><span class="glyph">■</span>STOP</button>
+        <button class="vcr-btn" id="btnFf"    title="Fast Forward"><span class="glyph">⏩</span>FF</button>
+        <button class="vcr-btn eject" id="btnEject" title="Eject"><span class="glyph">⏏</span>EJECT</button>
+      </div>
+
+      <!-- Seek bar -->
+      <div class="mt-4 flex items-center gap-3">
+        <span class="digital green text-xs" id="cur">00:00</span>
+        <input type="range" id="seek" min="0" max="1000" value="0" step="1"
+               class="flex-1 accent-amber-500" aria-label="Seek" />
+        <span class="digital green text-xs" id="dur">00:00</span>
+      </div>
+
+      <!-- Auxiliary controls: playback speed + simulated tracking + volume -->
+      <div class="mt-4 grid sm:grid-cols-3 gap-4 font-mono text-xs">
+        <label class="block">
+          <span class="opacity-70">PLAYBACK SPEED</span>
+          <select id="speed" class="retro-input mt-1">
+            <option value="0.5">0.5×</option>
+            <option value="1" selected>1×</option>
+            <option value="1.5">1.5×</option>
+            <option value="2">2×</option>
+          </select>
+        </label>
+        <label class="block">
+          <span class="opacity-70">TRACKING</span>
+          <input type="range" id="tracking" min="-50" max="50" value="0"
+                 class="w-full mt-2 accent-amber-500" />
+        </label>
+        <label class="block">
+          <span class="opacity-70">VOLUME</span>
+          <input type="range" id="volume" min="0" max="100" value="100"
+                 class="w-full mt-2 accent-amber-500" />
+        </label>
+      </div>
+
+      <% if (video.description) { %>
+        <!-- The paper sleeve insert that shipped with this tape -->
+        <details class="mt-4">
+          <summary class="font-mono text-xs cursor-pointer opacity-70">📄 SLEEVE NOTES</summary>
+          <div class="sleeve mt-2 text-sm"><%= video.description %></div>
+        </details>
+      <% } %>
+    </div>
+  </div>
+</main>
+
+<script src="/js/player.js"></script>
+<%- include('../partials/foot') %>

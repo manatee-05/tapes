@@ -1,0 +1,595 @@
+/* =========================================================================
+   RetroTape — hand-written retro CSS
+   -------------------------------------------------------------------------
+   This file contains all the heavy thematic styling: bundled web fonts,
+   CRT scanlines + curvature, VHS static, glowing digital displays, and
+   tactile VCR buttons.
+
+   IMPORTANT DESIGN RULE:
+   All CRT / VHS / scanline / static effects are applied ONLY to the
+   surrounding bezel, chassis, controls and *empty* player states. They are
+   NEVER applied to a live <video> element. The `.screen-effects` overlay is
+   intentionally pointer-events:none and is removed/hidden once real video
+   playback begins, keeping the source video pristine.
+   ========================================================================= */
+
+/* ---- Fonts (self-hosted so the container needs no internet at runtime) -- */
+@font-face {
+  font-family: "VT323";
+  src: url("/fonts/VT323-Regular.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Press Start 2P";
+  src: url("/fonts/PressStart2P-Regular.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Share Tech Mono";
+  src: url("/fonts/ShareTechMono-Regular.woff2") format("woff2");
+  font-display: swap;
+}
+
+:root {
+  --amber-glow: #ffb000;
+  --phosphor-glow: #33ff66;
+  --bluescreen: #0000aa;
+  --chassis-900: #0a0a0a;
+  --chassis-700: #1b1b1b;
+}
+
+html,
+body {
+  background-color: #050505;
+  color: #d8d8d8;
+  font-family: "Share Tech Mono", monospace;
+  margin: 0;
+  min-height: 100%;
+}
+
+/* Subtle dark vignette behind everything, like a dim living room. */
+body {
+  background-image: radial-gradient(
+    ellipse at center,
+    #141414 0%,
+    #050505 70%,
+    #000 100%
+  );
+}
+
+/* ---- Headings use the blocky arcade font ------------------------------- */
+.font-display,
+h1.retro-title,
+.retro-title {
+  font-family: "Press Start 2P", "VT323", monospace;
+  letter-spacing: 1px;
+  line-height: 1.4;
+}
+
+/* ---- Digital display (clock / timer / keypad readout) ------------------ */
+.digital {
+  font-family: "VT323", monospace;
+  color: var(--amber-glow);
+  text-shadow: 0 0 6px rgba(255, 176, 0, 0.8), 0 0 14px rgba(255, 176, 0, 0.4);
+}
+.digital.green {
+  color: var(--phosphor-glow);
+  text-shadow: 0 0 6px rgba(51, 255, 102, 0.8),
+    0 0 14px rgba(51, 255, 102, 0.4);
+}
+
+/* =========================================================================
+   CRT TELEVISION
+   ========================================================================= */
+
+/* The outer wood/plastic television cabinet. */
+.tv-cabinet {
+  background: linear-gradient(160deg, #2b2b2b 0%, #161616 60%, #0c0c0c 100%);
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), inset 0 0 0 2px #000;
+  position: relative;
+}
+
+/* The recessed bezel that frames the glass. */
+.crt-bezel {
+  background: #0b0b0b;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.9),
+    inset 0 0 0 3px #1c1c1c;
+  position: relative;
+}
+
+/* The glass tube itself. Holds either the video or an empty state. */
+.crt-screen {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px / 18px; /* slight bulge */
+  background: #000;
+  aspect-ratio: 4 / 3;
+  /* A faint screen-curvature highlight, drawn on the glass not the video. */
+}
+
+/* When a real video is actively playing we strip EVERY screen overlay
+   (curvature vignette + scanlines) so the source video is shown pristine.
+   The tracking/scanline flavour then lives only on the bezel + controls. */
+.crt-screen.playing::before {
+  display: none;
+}
+.crt-screen.playing .screen-effects {
+  display: none;
+}
+
+/* The actual video element fills the glass and is never filtered. */
+.crt-screen video.tape-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+  z-index: 3;
+}
+
+/* Tracking jitter is applied to the BEZEL/frame only (never the video). */
+.crt-bezel.tracking-jitter {
+  animation: bezel-jitter 0.12s steps(2) infinite;
+}
+@keyframes bezel-jitter {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-1px); }
+  100% { transform: translateY(1px); }
+}
+
+/* The bulge/curvature highlight — sits ABOVE the bezel glass but is a
+   non-interactive overlay so it never touches the video pixels. */
+.crt-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 14px / 18px;
+  box-shadow: inset 0 0 60px 12px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* The scanline + flicker + vignette overlay. Lives on top of EMPTY states
+   only. We toggle .effects-hidden on it the instant real video plays. */
+.screen-effects {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  border-radius: 14px / 18px;
+  background-image:
+    /* horizontal scanlines */
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, 0.28) 3px,
+      rgba(0, 0, 0, 0.28) 4px
+    ),
+    /* subtle RGB phosphor stripes */
+      repeating-linear-gradient(
+        to right,
+        rgba(255, 0, 0, 0.04),
+        rgba(0, 255, 0, 0.02) 2px,
+        rgba(0, 0, 255, 0.04) 3px
+      );
+  animation: crt-flicker 5s infinite steps(60);
+}
+.screen-effects.effects-hidden {
+  display: none;
+}
+
+@keyframes crt-flicker {
+  0%,
+  96%,
+  100% {
+    opacity: 0.9;
+  }
+  97% {
+    opacity: 0.75;
+  }
+  98% {
+    opacity: 1;
+  }
+  99% {
+    opacity: 0.82;
+  }
+}
+
+/* ---- "NO SIGNAL" fuzzy static screen ----------------------------------- */
+.static-noise {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  /* Generated noise via layered gradients animated by position. */
+  background:
+    repeating-conic-gradient(
+        #1a1a1a 0%,
+        #2a2a2a 0.0003%,
+        #000 0.0006%
+      )
+      0 0 / 3px 3px;
+  opacity: 0.5;
+  animation: static-shift 0.18s steps(4) infinite;
+}
+@keyframes static-shift {
+  0% {
+    background-position: 0 0;
+  }
+  25% {
+    background-position: -2px 1px;
+  }
+  50% {
+    background-position: 2px -1px;
+  }
+  75% {
+    background-position: -1px 2px;
+  }
+  100% {
+    background-position: 1px -2px;
+  }
+}
+
+/* Rolling tracking bar that sweeps down the static screen. */
+.tracking-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 40px;
+  z-index: 3;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.18) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: tracking-roll 6s linear infinite;
+  pointer-events: none;
+}
+@keyframes tracking-roll {
+  0% {
+    top: -10%;
+  }
+  100% {
+    top: 110%;
+  }
+}
+
+/* ---- The classic blue "no input" screen -------------------------------- */
+.blue-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: var(--bluescreen);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #fff;
+  padding: 24px;
+}
+
+/* The empty-state text container (NO SIGNAL etc.) sits above static. */
+.screen-message {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #fff;
+  padding: 24px;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.9);
+}
+
+/* =========================================================================
+   TACTILE VCR CONTROLS
+   ========================================================================= */
+.vcr-panel {
+  background: linear-gradient(180deg, #242424 0%, #131313 100%);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.vcr-btn {
+  font-family: "Share Tech Mono", monospace;
+  background: linear-gradient(180deg, #3a3a3a 0%, #1f1f1f 100%);
+  color: #e6e6e6;
+  border: 1px solid #000;
+  border-radius: 8px;
+  padding: 10px 14px;
+  min-width: 56px;
+  cursor: pointer;
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.8);
+  transition: transform 0.05s ease, box-shadow 0.05s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  user-select: none;
+}
+.vcr-btn:hover {
+  background: linear-gradient(180deg, #444 0%, #232323 100%);
+}
+.vcr-btn:active,
+.vcr-btn.is-active {
+  transform: translateY(2px);
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.9);
+  color: var(--amber-glow);
+}
+.vcr-btn .glyph {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.vcr-btn.eject {
+  color: #ff5252;
+}
+
+/* A small lit LED, e.g. power/record indicator. */
+.led {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  background: #500;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+}
+.led.on {
+  background: var(--phosphor-glow);
+  box-shadow: 0 0 8px var(--phosphor-glow);
+}
+.led.rec.on {
+  background: #ff2a2a;
+  box-shadow: 0 0 8px #ff2a2a;
+  animation: rec-blink 1.2s steps(2) infinite;
+}
+@keyframes rec-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* =========================================================================
+   VHS CASSETTE GRAPHICS (library shelf)
+   ========================================================================= */
+.tape-shelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 22px;
+}
+
+.cassette {
+  position: relative;
+  background: linear-gradient(160deg, #2c2c2c 0%, #161616 100%);
+  border-radius: 8px;
+  padding: 14px;
+  border: 1px solid #000;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  aspect-ratio: 16 / 10;
+  display: flex;
+  flex-direction: column;
+}
+.cassette:hover {
+  transform: translateY(-4px) rotate(-0.4deg);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.7);
+}
+
+/* The handwritten paper label glued onto the cassette spine/face. */
+.cassette-label {
+  background: repeating-linear-gradient(
+    to bottom,
+    #f6f1de 0px,
+    #f6f1de 22px,
+    #e9e2c8 23px
+  );
+  color: #1a1a1a;
+  font-family: "Comic Sans MS", "Segoe Print", "Bradley Hand", cursive;
+  border-radius: 3px;
+  padding: 8px 10px;
+  flex: 1;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+  transform: rotate(-0.6deg);
+  overflow: hidden;
+}
+.cassette-label .label-title {
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.2;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+}
+.cassette-label .label-meta {
+  font-size: 0.78rem;
+  opacity: 0.75;
+}
+
+/* The two reel windows at the bottom of the cassette. */
+.cassette-reels {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin-top: 10px;
+}
+.reel {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, #444 0%, #111 60%, #000 100%);
+  border: 2px solid #000;
+  position: relative;
+}
+.reel::after {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border-radius: 50%;
+  border: 2px dashed #666;
+}
+.cassette:hover .reel::after {
+  animation: reel-spin 1.2s linear infinite;
+}
+@keyframes reel-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================================================
+   CASSETTE INSERT ANIMATION (clicking a tape -> loads into the VCR)
+   ========================================================================= */
+.insert-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+}
+.insert-tape {
+  width: 220px;
+  height: 130px;
+  background: linear-gradient(160deg, #2c2c2c 0%, #161616 100%);
+  border-radius: 8px;
+  border: 1px solid #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ccc;
+  font-family: "Comic Sans MS", cursive;
+  animation: tape-insert 1.6s ease forwards;
+}
+@keyframes tape-insert {
+  0% {
+    transform: translateY(-120%) scale(1);
+    opacity: 0;
+  }
+  20% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(40px) scale(0.6);
+    opacity: 0;
+  }
+}
+
+/* =========================================================================
+   KEYPAD / LOCKBOX (passcode entry)
+   ========================================================================= */
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  max-width: 260px;
+}
+.keypad .vcr-btn {
+  font-size: 1.3rem;
+  padding: 14px;
+}
+.keypad-readout {
+  font-family: "VT323", monospace;
+  background: #0a0a0a;
+  color: var(--phosphor-glow);
+  text-shadow: 0 0 6px var(--phosphor-glow);
+  border-radius: 6px;
+  padding: 12px;
+  letter-spacing: 6px;
+  text-align: center;
+  font-size: 2rem;
+  border: 1px solid #000;
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.9);
+  min-height: 1.4em;
+}
+
+/* =========================================================================
+   FORMS / TERMINAL LOOK (admin + setup)
+   ========================================================================= */
+.terminal {
+  background: #000;
+  border: 1px solid #1d1d1d;
+  border-radius: 10px;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 0, 0, 0.9);
+  color: var(--phosphor-glow);
+  font-family: "Share Tech Mono", monospace;
+}
+.terminal input,
+.terminal textarea,
+.terminal select,
+.retro-input {
+  background: #0a0a0a;
+  border: 1px solid #2a2a2a;
+  color: var(--phosphor-glow);
+  font-family: "Share Tech Mono", monospace;
+  padding: 10px 12px;
+  border-radius: 6px;
+  width: 100%;
+  outline: none;
+}
+.terminal input:focus,
+.terminal textarea:focus,
+.retro-input:focus {
+  border-color: var(--phosphor-glow);
+  box-shadow: 0 0 8px rgba(51, 255, 102, 0.4);
+}
+
+/* The paper "tape sleeve" insert preview in the admin upload form. */
+.sleeve {
+  background: #f6f1de;
+  color: #1a1a1a;
+  font-family: "Courier New", monospace;
+  border-radius: 4px;
+  padding: 14px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+  white-space: pre-wrap;
+}
+
+/* A flash/notice banner. */
+.notice {
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: "Share Tech Mono", monospace;
+  margin-bottom: 14px;
+}
+.notice.error {
+  background: #3a0d0d;
+  color: #ff8a8a;
+  border: 1px solid #5c1a1a;
+}
+.notice.ok {
+  background: #0d3a1a;
+  color: #8affb0;
+  border: 1px solid #1a5c2f;
+}
+
+/* Reduce motion for users who prefer it. */
+@media (prefers-reduced-motion: reduce) {
+  .screen-effects,
+  .static-noise,
+  .tracking-bar,
+  .led.rec.on,
+  .cassette:hover .reel::after,
+  .insert-tape {
+    animation: none !important;
+  }
+}

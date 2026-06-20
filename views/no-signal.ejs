@@ -1,0 +1,45 @@
+<%- include('partials/head', { pageTitle: 'RetroTape — No Signal' }) %>
+
+<!--
+  Root / fallback screen. Mimics an old television set receiving no input:
+  a fuzzy static field with a rolling tracking bar and a bold message. The
+  static/scanline effects here are pure CSS UI chrome (no real video).
+-->
+<main class="min-h-screen flex items-center justify-center p-4 sm:p-8">
+  <div class="w-full max-w-3xl">
+    <div class="tv-cabinet">
+      <div class="crt-bezel">
+        <div class="crt-screen">
+          <!-- Layered empty-state effects -->
+          <div class="static-noise"></div>
+          <div class="tracking-bar"></div>
+          <div class="screen-effects"></div>
+
+          <div class="screen-message">
+            <h1 class="retro-title text-2xl sm:text-4xl text-white mb-4 tracking-widest">
+              <%= typeof title !== 'undefined' ? title : 'NO SIGNAL' %>
+            </h1>
+            <p class="digital text-3xl sm:text-5xl mb-6">▮ PLEASE INSERT CASSETTE ▮</p>
+            <p class="font-mono text-sm sm:text-base text-gray-200 max-w-md">
+              <%= typeof message !== 'undefined'
+                    ? message
+                    : 'There is no channel here. RetroTape can only be viewed through a direct library link — ask whoever shared the collection for your personal address, e.g. ' + BASE_URL + '/their-library.' %>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fake VCR faceplate beneath the screen for flavour -->
+      <div class="mt-5 flex items-center justify-between vcr-panel">
+        <div class="flex items-center gap-3">
+          <span class="led on"></span>
+          <span class="digital green text-xl">--:--:--</span>
+        </div>
+        <div class="text-gray-500 font-mono text-sm tracking-widest">R E T R O T A P E</div>
+        <a href="/admin" class="vcr-btn text-xs" title="Administration">⚙ ADMIN</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<%- include('partials/foot') %>

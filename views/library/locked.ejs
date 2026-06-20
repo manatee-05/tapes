@@ -1,0 +1,70 @@
+<%- include('../partials/head', { pageTitle: library.title + ' — Locked' }) %>
+
+<!--
+  Vintage digital lockbox / keypad. The library is passcode protected.
+  Passcodes may be alphanumeric, so the field accepts keyboard input while the
+  on-screen keypad provides quick digit entry for that authentic VCR feel.
+-->
+<main class="min-h-screen flex items-center justify-center p-4">
+  <div class="tv-cabinet w-full max-w-sm">
+    <div class="vcr-panel">
+      <div class="flex items-center justify-between mb-4">
+        <span class="led rec on"></span>
+        <span class="retro-title text-xs text-amber-glow">SECURED</span>
+      </div>
+
+      <h1 class="retro-title text-sm mb-2 text-center"><%= library.title %></h1>
+      <p class="font-mono text-xs text-center opacity-60 mb-4">ENTER PASSCODE TO UNLOCK</p>
+
+      <% if (error) { %><div class="notice error text-center text-sm"><%= error %></div><% } %>
+
+      <form method="POST" action="/<%= library.slug %>/unlock" id="unlockForm">
+        <!-- Masked digital readout mirrors the real input below -->
+        <div class="keypad-readout mb-3" id="readout">&nbsp;</div>
+        <input type="text" name="passcode" id="passcode" maxlength="32"
+               class="retro-input mb-4 text-center tracking-widest"
+               autocomplete="off" autofocus inputmode="text"
+               placeholder="type or tap below" />
+
+        <div class="keypad mx-auto mb-4" aria-hidden="true">
+          <% [1,2,3,4,5,6,7,8,9].forEach(function(n){ %>
+            <button type="button" class="vcr-btn" data-key="<%= n %>"><%= n %></button>
+          <% }); %>
+          <button type="button" class="vcr-btn eject" data-action="clear">CLR</button>
+          <button type="button" class="vcr-btn" data-key="0">0</button>
+          <button type="button" class="vcr-btn" data-action="back">⌫</button>
+        </div>
+
+        <button type="submit" class="vcr-btn w-full">🔓 UNLOCK</button>
+      </form>
+    </div>
+  </div>
+</main>
+
+<script>
+  // Wire the on-screen keypad to the real text input + masked readout.
+  (function () {
+    var field = document.getElementById('passcode');
+    var readout = document.getElementById('readout');
+
+    function render() {
+      var v = field.value;
+      // Show bullets for entered characters; keep the readout from collapsing.
+      readout.textContent = v.length ? '•'.repeat(v.length) : ' ';
+    }
+    field.addEventListener('input', render);
+
+    document.querySelectorAll('.keypad [data-key], .keypad [data-action]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (btn.dataset.action === 'clear') field.value = '';
+        else if (btn.dataset.action === 'back') field.value = field.value.slice(0, -1);
+        else if (field.value.length < 32) field.value += btn.dataset.key;
+        render();
+        field.focus();
+      });
+    });
+    render();
+  })();
+</script>
+
+<%- include('../partials/foot') %>

@@ -1,0 +1,52 @@
+<%- include('../partials/head', { pageTitle: library.title + ' — Library' }) %>
+
+<!-- A shelf of VHS cassettes. Clicking one triggers the insert animation
+     (see /js/shelf.js) and then navigates to the player. -->
+<main class="max-w-5xl mx-auto p-4 sm:p-8">
+
+  <header class="vcr-panel flex items-center justify-between gap-3 mb-8">
+    <div class="flex items-center gap-3">
+      <span class="led on"></span>
+      <h1 class="retro-title text-base sm:text-lg text-amber-glow"><%= library.title %></h1>
+    </div>
+    <span class="digital green text-lg hidden sm:inline" id="clock">--:--:--</span>
+  </header>
+
+  <% if (videos.length === 0) { %>
+    <div class="tv-cabinet max-w-xl mx-auto">
+      <div class="crt-bezel"><div class="crt-screen">
+        <div class="static-noise"></div>
+        <div class="screen-effects"></div>
+        <div class="screen-message">
+          <p class="digital text-3xl">EMPTY SHELF</p>
+          <p class="font-mono text-sm mt-3">No tapes have been loaded into this library yet.</p>
+        </div>
+      </div></div>
+    </div>
+  <% } else { %>
+    <div class="tape-shelf">
+      <% videos.forEach(function(v){ %>
+        <article class="cassette"
+                 data-href="/<%= library.slug %>/watch/<%= v.id %>"
+                 data-title="<%= v.title.replace(/"/g,'&quot;') %>"
+                 role="link" tabindex="0">
+          <div class="cassette-label">
+            <div class="label-title"><%= v.title %></div>
+            <% if (v.description) { %>
+              <div class="label-meta"><%= v.description.length > 90 ? v.description.slice(0,90) + '…' : v.description %></div>
+            <% } else { %>
+              <div class="label-meta">— no notes —</div>
+            <% } %>
+          </div>
+          <div class="cassette-reels">
+            <span class="reel"></span>
+            <span class="reel"></span>
+          </div>
+        </article>
+      <% }); %>
+    </div>
+  <% } %>
+</main>
+
+<script src="/js/shelf.js"></script>
+<%- include('../partials/foot') %>

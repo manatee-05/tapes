@@ -1,0 +1,15 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+data
+.devdata*
+.cookies*.txt
+.dev*.txt
+.deverr*.txt
+.devlog*.txt
+.fake.mp4
+*.md
+.env
+.env.*
+!.env.example

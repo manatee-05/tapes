@@ -1,0 +1,36 @@
+<%- include('../partials/head', { pageTitle: 'RetroTape — Admin Login' }) %>
+
+<!-- Terminal-style secure login for returning administrators. -->
+<main class="min-h-screen flex items-center justify-center p-4">
+  <div class="terminal w-full max-w-md p-8">
+    <pre class="text-xs leading-tight mb-4 opacity-80">
+RETROTAPE SECURE TERMINAL
+AUTHORIZATION REQUIRED</pre>
+
+    <h1 class="retro-title text-lg mb-6 text-phosphor-glow">// LOGIN</h1>
+
+    <% if (error) { %>
+      <div class="notice error"><%= error %></div>
+    <% } %>
+
+    <form method="POST" action="/admin/login" class="space-y-4">
+      <label class="block">
+        <span class="font-mono text-sm">USERNAME</span>
+        <input class="mt-1" type="text" name="username" autocomplete="username"
+               required autofocus />
+      </label>
+      <label class="block">
+        <span class="font-mono text-sm">PASSWORD</span>
+        <input class="mt-1" type="password" name="password"
+               autocomplete="current-password" required />
+      </label>
+      <button type="submit" class="vcr-btn w-full mt-2">► AUTHENTICATE</button>
+    </form>
+
+    <p class="text-center mt-6 text-xs opacity-60">
+      <a href="/" class="underline">&larr; back to no-signal</a>
+    </p>
+  </div>
+</main>
+
+<%- include('../partials/foot') %>
