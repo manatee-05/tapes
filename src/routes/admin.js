@@ -10,7 +10,14 @@
  *   POST /admin/libraries            -> create a library
  *   POST /admin/libraries/:id        -> edit a library's settings
  *   POST /admin/libraries/:id/delete -> delete a library (and its tapes)
- *   POST /admin/libraries/:id/videos -> upload a tape (multipart)
+ *
+ *   Chunked tape upload (keeps every request well under the proxy's payload
+ *   cap; see src/storage.js and public/js/upload.js):
+ *   POST   /admin/libraries/:id/uploads                       -> start a session
+ *   PUT    /admin/libraries/:id/uploads/:uploadId/chunks/:i   -> send one chunk
+ *   POST   /admin/libraries/:id/uploads/:uploadId/complete    -> finalise + save
+ *   DELETE /admin/libraries/:id/uploads/:uploadId             -> abort a session
+ *
  *   POST /admin/videos/:id/delete    -> delete a tape
  */
 
@@ -19,10 +26,12 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 
 const db = require("../db");
-// Storage controller: Multer upload (-> internal /app/uploads) + file removal.
-const { upload, removeFile } = require("../storage");
+// Storage controller: chunked upload session API + file removal.
+const storage = require("../storage");
+const { removeFile } = storage;
 const { requireAdmin } = require("../middleware/auth");
 const { slugify, isValidSlug, isValidPasscode } = require("../util");
+const { MAX_CHUNK_BYTES } = require("../config");
 
 const router = express.Router();
 
@@ -200,48 +209,104 @@ router.post("/libraries/:id/delete", requireAdmin, (req, res) => {
 });
 
 /* ------------------------------------------------------------------ *
- * Video (tape) management
+ * Video (tape) management — CHUNKED upload
+ *
+ * The browser slices the file (see public/js/upload.js) and drives the three
+ * endpoints below over JSON/binary, so no single request ever approaches the
+ * proxy's payload cap. Responses are JSON for the client to act on.
  * ------------------------------------------------------------------ */
-router.post(
-  "/libraries/:id/videos",
+
+// Verify the upload session exists and is bound to the library in the URL.
+// Returns the session, or sends a 404 JSON error and returns null.
+function sessionForRequest(req, res) {
+  const session = storage.getUploadSession(req.params.uploadId);
+  if (!session || session.libraryId !== String(req.params.id)) {
+    res.status(404).json({ error: "Upload session not found or expired." });
+    return null;
+  }
+  return session;
+}
+
+// 1. Start a chunked upload session.
+router.post("/libraries/:id/uploads", requireAdmin, (req, res) => {
+  const lib = db.getLibrary(req.params.id);
+  if (!lib) return res.status(404).json({ error: "Library not found." });
+
+  try {
+    const uploadId = storage.createUploadSession({
+      libraryId: lib.id,
+      originalName: req.body.filename,
+      mimeType: req.body.mimeType,
+      fileSize: req.body.fileSize,
+      totalChunks: req.body.totalChunks,
+    });
+    res.json({ uploadId });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// 2. Receive one raw binary chunk. express.raw caps the body just above the
+//    configured chunk size as a defensive backstop.
+router.put(
+  "/libraries/:id/uploads/:uploadId/chunks/:index",
   requireAdmin,
-  (req, res, next) => {
-    // Wrap multer so we can render friendly errors (size/type limits).
-    upload.single("video")(req, res, (err) => {
-      if (err) {
-        return renderDashboard(req, res, { error: err.message });
-      }
-      next();
-    });
-  },
+  express.raw({ type: () => true, limit: MAX_CHUNK_BYTES }),
   (req, res) => {
-    const lib = db.getLibrary(req.params.id);
-    if (!lib) {
-      if (req.file) removeFile(req.file.filename);
-      return renderDashboard(req, res, { error: "Library not found." });
+    if (!sessionForRequest(req, res)) return;
+    try {
+      const progress = storage.saveChunk(
+        req.params.uploadId,
+        req.params.index,
+        req.body
+      );
+      res.json(progress);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
     }
-    if (!req.file) {
-      return renderDashboard(req, res, { error: "No video file was provided." });
-    }
-
-    const title =
-      String(req.body.title || "").trim() ||
-      path.parse(req.file.originalname).name;
-    const description = String(req.body.description || "").trim();
-
-    db.createVideo({
-      library_id: lib.id,
-      title,
-      description,
-      filename: req.file.filename,
-      original_name: req.file.originalname,
-      mime_type: req.file.mimetype,
-      size_bytes: req.file.size,
-    });
-
-    res.redirect(`/admin?library=${lib.id}`);
   }
 );
+
+// 3. Finalise: assemble the parts and record the tape's metadata.
+router.post("/libraries/:id/uploads/:uploadId/complete", requireAdmin, (req, res) => {
+  if (!sessionForRequest(req, res)) return;
+
+  const lib = db.getLibrary(req.params.id);
+  if (!lib) {
+    storage.abortUpload(req.params.uploadId);
+    return res.status(404).json({ error: "Library not found." });
+  }
+
+  let meta;
+  try {
+    meta = storage.completeUpload(req.params.uploadId);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+
+  const title =
+    String(req.body.title || "").trim() || path.parse(meta.originalName).name;
+  const description = String(req.body.description || "").trim();
+
+  db.createVideo({
+    library_id: lib.id,
+    title,
+    description,
+    filename: meta.filename,
+    original_name: meta.originalName,
+    mime_type: meta.mimeType,
+    size_bytes: meta.size,
+  });
+
+  res.json({ ok: true, redirect: `/admin?library=${lib.id}` });
+});
+
+// Abort an in-progress upload (e.g. the user cancelled or navigated away).
+router.delete("/libraries/:id/uploads/:uploadId", requireAdmin, (req, res) => {
+  if (!sessionForRequest(req, res)) return;
+  storage.abortUpload(req.params.uploadId);
+  res.json({ ok: true });
+});
 
 router.post("/videos/:id/delete", requireAdmin, (req, res) => {
   const video = db.getVideo(req.params.id);

@@ -39,7 +39,7 @@ and empty-player states. The actual video stream is always served and rendered
 | Views        | EJS server-side templates                |
 | Styling      | Tailwind CSS (compiled) + hand-written retro/CRT CSS |
 | Database     | SQLite (`better-sqlite3`), single file   |
-| Uploads      | Multer → internal `/app/uploads` directory |
+| Uploads      | Chunked HTTP → internal `/app/uploads` directory |
 | Sessions     | `express-session` stored in the SQLite file |
 | Container    | Docker + Docker Compose (Portainer-ready)|
 
@@ -54,7 +54,8 @@ and empty-player states. The actual video stream is always served and rendered
 | `DATA_DIR`       | `/data` (container)      | Path for the SQLite DB + sessions (text metadata only).        |
 | `UPLOADS_DIR`    | `/app/uploads` (container) | Path for uploaded video media, kept **inside** the container. |
 | `SESSION_SECRET` | dev fallback             | Secret used to sign session cookies — **set this** in prod.    |
-| `MAX_UPLOAD_BYTES` | `4294967296` (4 GiB)   | Maximum upload size.                                           |
+| `MAX_UPLOAD_BYTES` | `4294967296` (4 GiB)   | Maximum size of a finished (assembled) video.                  |
+| `MAX_CHUNK_BYTES`  | `52428800` (50 MiB)    | Server-side cap on a single chunked-upload request body.       |
 
 ### Storage strategy
 
@@ -76,6 +77,26 @@ UPLOADS_DIR (/app/uploads, volume retrotape_media)
   unique filename.
 - The uploads directory is created at startup if missing (and re-checked on
   every upload).
+
+#### Chunked uploads
+
+Some proxies — notably **Cloudflare Tunnels** — reject any HTTP request body
+larger than 100 MB with `413 Payload Too Large`. To stay safely under that, the
+admin dashboard never sends a whole video in one request. The browser
+(`public/js/upload.js`) slices the file into 25 MB chunks and uploads them one
+at a time:
+
+1. `POST /admin/libraries/:id/uploads` — register the upload (validates MIME
+   type + total size) and receive an `uploadId`.
+2. `PUT  /admin/libraries/:id/uploads/:uploadId/chunks/:index` — one request per
+   chunk; each part is written to a scratch directory on the media volume.
+3. `POST /admin/libraries/:id/uploads/:uploadId/complete` — the server
+   concatenates the parts (streamed, never buffered whole in RAM) into the final
+   file and records the tape's metadata.
+
+`MAX_CHUNK_BYTES` (default 50 MiB) is a server-side guard that rejects any
+single oversized chunk. Abandoned sessions are swept after 6 hours and any
+orphaned scratch parts are purged on startup.
 
 ---
 
@@ -154,7 +175,10 @@ Then open <http://localhost:3000/admin> to create the first admin.
 | POST   | `/admin/libraries`            | Create a library.                            |
 | POST   | `/admin/libraries/:id`        | Edit a library (title, slug, passcode).      |
 | POST   | `/admin/libraries/:id/delete` | Delete a library and its tapes.              |
-| POST   | `/admin/libraries/:id/videos` | Upload a tape (multipart).                   |
+| POST   | `/admin/libraries/:id/uploads` | Start a chunked tape upload.                |
+| PUT    | `/admin/libraries/:id/uploads/:uploadId/chunks/:index` | Upload one chunk. |
+| POST   | `/admin/libraries/:id/uploads/:uploadId/complete` | Assemble + save the tape. |
+| DELETE | `/admin/libraries/:id/uploads/:uploadId` | Abort a chunked upload.            |
 | POST   | `/admin/videos/:id/delete`    | Delete a tape.                               |
 | GET    | `/:slug`                      | Library keypad (if locked) or cassette shelf.|
 | POST   | `/:slug/unlock`               | Submit a passcode.                           |
@@ -179,7 +203,7 @@ src/
 ├── server.js              # Express app + wiring
 ├── config.js              # env-var driven configuration
 ├── db.js                  # SQLite schema + data access (metadata only)
-├── storage.js             # media storage controller: Multer + chunked streaming
+├── storage.js             # media storage controller: chunked uploads + streaming
 ├── util.js                # slug/passcode helpers
 ├── middleware/auth.js     # admin + library-access guards
 ├── routes/

@@ -41,9 +41,18 @@ const UPLOADS_DIR = path.resolve(
 const SESSION_SECRET =
   process.env.SESSION_SECRET || "retrotape-please-change-this-secret";
 
-// Cap uploads at a generous size for digitized tapes (default 4 GB).
+// Cap uploads at a generous size for digitized tapes (default 4 GB). This is
+// the total size of an assembled video, NOT the size of a single HTTP request.
 const MAX_UPLOAD_BYTES =
   parseInt(process.env.MAX_UPLOAD_BYTES, 10) || 4 * 1024 * 1024 * 1024;
+
+// Hard ceiling for a SINGLE chunked-upload request body. Some proxies (notably
+// Cloudflare Tunnels) reject any HTTP payload over 100 MB with "413 Payload
+// Too Large", so uploads are split into chunks that each stay well under that.
+// The client slices at a smaller size still (see public/js/upload.js); this
+// value is the server-side guard that rejects an oversized individual chunk.
+const MAX_CHUNK_BYTES =
+  parseInt(process.env.MAX_CHUNK_BYTES, 10) || 50 * 1024 * 1024;
 
 module.exports = {
   PORT,
@@ -53,4 +62,5 @@ module.exports = {
   UPLOADS_DIR,
   SESSION_SECRET,
   MAX_UPLOAD_BYTES,
+  MAX_CHUNK_BYTES,
 };
