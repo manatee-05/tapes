@@ -113,11 +113,10 @@
           </form>
         </div>
 
-        <!-- Upload a tape -->
+        <!-- Upload a tape (chunked — see public/js/upload.js) -->
         <div>
           <h3 class="font-mono text-phosphor-glow mb-3">LOAD A NEW TAPE</h3>
-          <form method="POST" action="/admin/libraries/<%= selected.id %>/videos"
-                enctype="multipart/form-data" class="space-y-4">
+          <form id="uploadForm" data-base="/admin/libraries/<%= selected.id %>" class="space-y-4">
             <label class="block">
               <span class="font-mono text-sm">VIDEO FILE</span>
               <input class="mt-1" type="file" name="video" accept="video/*" required />
@@ -142,7 +141,16 @@
               </div>
             </div>
 
-            <button type="submit" class="vcr-btn w-full">⏺ UPLOAD TAPE</button>
+            <!-- Chunked-upload progress (revealed by upload.js while loading) -->
+            <div id="uploadProgress" class="hidden">
+              <div id="uploadStatus" class="font-mono text-xs text-phosphor-glow mb-1">Preparing…</div>
+              <div class="w-full h-3 bg-chassis-900 border border-gray-700 rounded overflow-hidden">
+                <div id="uploadBar" class="h-full bg-phosphor-glow transition-all duration-200" style="width:0%"></div>
+              </div>
+            </div>
+            <div id="uploadError" class="notice error hidden"></div>
+
+            <button type="submit" id="uploadBtn" class="vcr-btn w-full">⏺ UPLOAD TAPE</button>
           </form>
         </div>
       </div>
@@ -191,5 +199,7 @@
     d.addEventListener('input', sync);
   })();
 </script>
+<!-- Chunked upload driver (only present when a library is selected). -->
+<script src="/js/upload.js" defer></script>
 
 <%- include('../partials/foot') %>
